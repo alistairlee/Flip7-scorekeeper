@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Flip 7 Scorekeeper</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #090d16 0%, #1e3a8a 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --card-border: #f59e0b;
+      --card-border-subtle: #334155;
+      --accent: #0284c7;
+      --accent-hover: #0369a1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --gold: #f59e0b;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    
+    body { 
+      background: var(--bg-gradient); 
+      background-attachment: fixed;
+      color: var(--text-main); 
+      min-height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+      padding: 16px; 
+      max-width: 1000px; 
+      margin: 0 auto; 
+    }
+
+    /* Styling for Creative Title */
+    h1.game-title {
+      font-family: 'Impact', 'Arial Black', -apple-system, sans-serif;
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-align: center;
+      background: linear-gradient(180deg, #fef08a 0%, #f59e0b 60%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
+      margin-bottom: 4px;
+      transform: skew(-4deg);
+    }
+
+    /* Setup Screen */
+    .setup-card { 
+      background: var(--card-bg); 
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid var(--gold); 
+      border-radius: var(--radius); 
+      padding: 24px; 
+      max-width: 500px; 
+      margin: auto; 
+      width: 100%; 
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 15px rgba(245, 158, 11, 0.25); 
+    }
+    
+    p.subtitle { color: var(--text-muted); font-size: 14px; text-align: center; margin-bottom: 24px; font-weight: 500; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gold); margin-bottom: 8px; }
+    
+    .player-buttons { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .btn-num { background: #1e293b; color: var(--text-main); border: 1px solid var(--card-border-subtle); border-radius: 8px; padding: 12px 0; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-num.active { background: var(--gold); color: #000; border-color: var(--gold); transform: scale(1.05); font-weight: 800; }
+    
+    .name-inputs { display: grid; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
+    input[type="text"], input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--card-border-subtle); border-radius: 10px; padding: 12px 14px; color: var(--text-main); font-size: 16px; outline: none; }
+    input[type="text"]:focus, input[type="number"]:focus { border-color: var(--gold); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+    
+    .btn-primary { width: 100%; background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); color: #000; border: none; border-radius: 12px; padding: 16px; font-size: 18px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: transform 0.1s, background 0.2s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* Main Scoreboard Screen */
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(245, 158, 11, 0.3); }
+    .round-badge { background: #1e293b; border: 1px solid var(--gold); padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 700; color: var(--gold); }
+    .btn-secondary { background: #1e293b; color: var(--text-main); border: 1px solid var(--card-border-subtle); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 80px; }
+    .player-card { background: var(--card-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--gold); border-radius: var(--radius); padding: 16px; position: relative; transition: transform 0.2s, border-color 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    .player-card.leader { border: 2px solid var(--gold); box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+    .leader-tag { position: absolute; top: -10px; right: 16px; background: var(--gold); color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .player-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .total-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .total-score { font-size: 52px; font-weight: 900; color: #38bdf8; line-height: 1; margin: 6px 0 16px; letter-spacing: -1px; }
+
+    /* Controls inside player card */
+    .input-row { display: flex; gap: 8px; align-items: center; }
+    .score-input { font-size: 18px; font-weight: 700; text-align: center; }
+    .btn-bust { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .btn-bust.active { background: var(--danger); color: white; }
+
+    .quick-calc-toggle { font-size: 12px; color: #38bdf8; background: none; border: none; cursor: pointer; margin-top: 8px; text-decoration: underline; padding: 0; }
+
+    /* Mini Calculator Modal / Accordion */
+    .calc-box { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px var(--card-border-subtle) dashed; font-size: 12px; }
+    .calc-box.open { display: block; }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+    .calc-btn { background: #0f172a; border: 1px solid var(--card-border-subtle); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; text-align: center; }
+    .calc-btn.selected { background: var(--gold); border-color: var(--gold); color: #000; font-weight: 700; }
+
+    /* Bottom Action Bar */
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--gold); padding: 12px 16px; display: flex; gap: 12px; justify-content: center; max-width: 1000px; margin: 0 auto; z-index: 100; }
+    .btn-submit { flex: 2; background: var(--success); color: white; border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .btn-undo { flex: 1; background: #1e293b; color: var(--text-main); border: 1px solid var(--card-border-subtle); border-radius: 12px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+    /* Winner Banner Modal & Confirmation Modal */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .modal.open { display: flex; }
+    .modal-card { background: #1e293b; border: 2px solid var(--gold); border-radius: 20px; padding: 28px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 0 30px rgba(245, 158, 11, 0.4); }
+    .winner-crown { font-size: 48px; margin-bottom: 8px; }
+    .winner-title { font-size: 24px; font-weight: 800; color: var(--gold); }
+    .winner-score { font-size: 36px; font-weight: 900; margin: 12px 0; color: #38bdf8; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- SETUP SCREEN -->
+  <div id="setupScreen" class="setup-card">
+    <h1 class="game-title">FLIP 7</h1>
+    <p class="subtitle">Offline Scorekeeper for iPad</p>
+
+    <div class="form-group">
+      <label>Number of Players</label>
+      <div class="player-buttons" id="playerCountSelector">
+        <button class="btn-num" onclick="setPlayerCount(2)">2</button>
+        <button class="btn-num active" onclick="setPlayerCount(3)">3</button>
+        <button class="btn-num" onclick="setPlayerCount(4)">4</button>
+        <button class="btn-num" onclick="setPlayerCount(5)">5</button>
+        <button class="btn-num" onclick="setPlayerCount(6)">6</button>
+        <button class="btn-num" onclick="setPlayerCount(7)">7</button>
+        <button class="btn-num" onclick="setPlayerCount(8)">8</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Target Score</label>
+      <input type="number" id="targetScoreInput" value="200" placeholder="Target Score (Default: 200)">
+    </div>
+
+    <div class="form-group">
+      <label>Player Names</label>
+      <div class="name-inputs" id="nameInputsContainer"></div>
+    </div>
+
+    <button class="btn-primary" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- MAIN SCOREBOARD SCREEN -->
+  <div id="gameScreen" class="hidden">
+    <div class="header">
+      <div>
+        <span class="round-badge" id="roundDisplay">Round 1</span>
+        <span style="font-size: 13px; color: var(--text-muted); margin-left: 8px;" id="targetDisplay">Goal: 200 pts</span>
+      </div>
+      <button class="btn-secondary" onclick="openResetModal()">New Game</button>
+    </div>
+
+    <div class="grid" id="playersGrid"></div>
+
+    <div class="bottom-bar">
+      <button class="btn-undo" onclick="undoLastRound()">Undo Round</button>
+      <button class="btn-submit" onclick="submitRound()">Submit Round</button>
+    </div>
+  </div>
+
+  <!-- CONFIRM RESET MODAL -->
+  <div class="modal" id="resetModal">
+    <div class="modal-card">
+      <div class="winner-title" style="margin-bottom: 12px;">Start New Game?</div>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Current game scores will be completely cleared.</p>
+      <button class="btn-primary" onclick="resetGame()">Yes, Reset Game</button>
+      <button class="btn-secondary" style="width: 100%; margin-top: 10px; padding: 14px;" onclick="closeResetModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- WINNER MODAL -->
+  <div class="modal" id="winnerModal">
+    <div class="modal-card">
+      <div class="winner-crown">🏆</div>
+      <div class="winner-title" id="winnerName">Player Wins!</div>
+      <div class="winner-score" id="winnerScore">215 PTS</div>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Game Over</p>
+      <button class="btn-primary" onclick="closeWinnerModal()">Keep Playing</button>
+      <button class="btn-secondary" style="width: 100%; margin-top: 10px; padding: 12px;" onclick="resetGame()">Start New Game</button>
+    </div>
+  </div>
+
+  <script>
+    let state = {
+      playerCount: 3,
+      players: [],
+      round: 1,
+      targetScore: 200,
+      history: []
+    };
+
+    let calcState = {};
+
+    window.onload = () => {
+      const saved = localStorage.getItem('flip7_game_state');
+      if (saved) {
+        try {
+          state = JSON.parse(saved);
+          if (state.players && state.players.length > 0) {
+            renderGame();
+            showScreen('gameScreen');
+            return;
+          }
+        } catch(e) {}
+      }
+      setPlayerCount(3);
+    };
+
+    function saveState() {
+      localStorage.setItem('flip7_game_state', JSON.stringify(state));
+    }
+
+    function setPlayerCount(count) {
+      state.playerCount = count;
+      document.querySelectorAll('#playerCountSelector .btn-num').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.innerText) === count);
+      });
+      renderNameInputs();
+    }
+
+    function renderNameInputs() {
+      const container = document.getElementById('nameInputsContainer');
+      container.innerHTML = '';
+      for (let i = 0; i < state.playerCount; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = `Player ${i + 1}`;
+        if (state.players[i] && state.players[i].name && !state.players[i].name.startsWith('Player ')) {
+          input.value = state.players[i].name;
+        } else {
+          input.value = '';
+        }
+        input.id = `playerName_${i}`;
+        container.appendChild(input);
+      }
+    }
+
+    function startGame() {
+      const targetInput = parseInt(document.getElementById('targetScoreInput').value) || 200;
+      state.targetScore = targetInput;
+      state.players = [];
+      state.round = 1;
+      state.history = [];
+
+      for (let i = 0; i < state.playerCount; i++) {
+        const inputElem = document.getElementById(`playerName_${i}`);
+        const nameVal = inputElem ? inputElem.value.trim() : '';
+        state.players.push({
+          name: nameVal || `Player ${i + 1}`,
+          scores: [],
+          total: 0
+        });
+      }
+
+      saveState();
+      renderGame();
+      showScreen('gameScreen');
+    }
+
+    function showScreen(id) {
+      document.getElementById('setupScreen').classList.add('hidden');
+      document.getElementById('gameScreen').classList.add('hidden');
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function renderGame() {
+      document.getElementById('roundDisplay').innerText = `Round ${state.round}`;
+      document.getElementById('targetDisplay').innerText = `Goal: ${state.targetScore} pts`;
+
+      const grid = document.getElementById('playersGrid');
+      grid.innerHTML = '';
+
+      const maxScore = Math.max(...state.players.map(p => p.total));
+
+      state.players.forEach((player, idx) => {
+        const isLeader = maxScore > 0 && player.total === maxScore;
+        const card = document.createElement('div');
+        card.className = `player-card ${isLeader ? 'leader' : ''}`;
+        card.innerHTML = `
+          ${isLeader ? '<div class="leader-tag">Leader</div>' : ''}
+          <div class="player-name">${escapeHtml(player.name)}</div>
+          <div class="total-label">Subtotal Score</div>
+          <div class="total-score" id="total_${idx}">${player.total}</div>
+
+          <div class="input-row">
+            <input type="number" class="score-input" id="input_${idx}" placeholder="0" min="0" pattern="[0-9]*" inputmode="numeric">
+            <button class="btn-bust" id="bustBtn_${idx}" onclick="toggleBust(${idx})">Bust (0)</button>
+          </div>
+
+          <button class="quick-calc-toggle" onclick="toggleCalc(${idx})">Card Calculator / Flip 7 (+15)</button>
+
+          <div class="calc-box" id="calc_${idx}">
+            <div style="margin-bottom: 4px; font-weight: 600;">Helper Calculator:</div>
+            <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+              <input type="number" id="calcNum_${idx}" placeholder="Number Cards Sum" style="padding: 6px; font-size: 13px;" oninput="updateCalcScore(${idx})">
+              <button class="calc-btn" id="calcX2_${idx}" onclick="toggleX2(${idx})">x2</button>
+            </div>
+            <div class="calc-grid">
+              <button class="calc-btn" id="flip7Btn_${idx}" onclick="toggleFlip7Bonus(${idx})">+15 (Flip 7!)</button>
+              <button class="calc-btn" id="mod2_${idx}" onclick="toggleModifier(${idx}, 2)">+2</button>
+              <button class="calc-btn" id="mod4_${idx}" onclick="toggleModifier(${idx}, 4)">+4</button>
+              <button class="calc-btn" id="mod6_${idx}" onclick="toggleModifier(${idx}, 6)">+6</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function toggleBust(idx) {
+      const input = document.getElementById(`input_${idx}`);
+      const btn = document.getElementById(`bustBtn_${idx}`);
+      if (input.value === '0' && btn.classList.contains('active')) {
+        input.value = '';
+        btn.classList.remove('active');
+      } else {
+        input.value = '0';
+        btn.classList.add('active');
+      }
+    }
+
+    function toggleCalc(idx) {
+      const box = document.getElementById(`calc_${idx}`);
+      box.classList.toggle('open');
+    }
+
+    function toggleX2(idx) {
+      calcState[idx] = calcState[idx] || { x2: false, flip7: false, modifier: 0 };
+      calcState[idx].x2 = !calcState[idx].x2;
+      document.getElementById(`calcX2_${idx}`).classList.toggle('selected', calcState[idx].x2);
+      updateCalcScore(idx);
+    }
+
+    function toggleFlip7Bonus(idx) {
+      calcState[idx] = calcState[idx] || { x2: false, flip7: false, modifier: 0 };
+      calcState[idx].flip7 = !calcState[idx].flip7;
+      document.getElementById(`flip7Btn_${idx}`).classList.toggle('selected', calcState[idx].flip7);
+      updateCalcScore(idx);
+    }
+
+    function toggleModifier(idx, val) {
+      calcState[idx] = calcState[idx] || { x2: false, flip7: false, modifier: 0 };
+      calcState[idx].modifier = (calcState[idx].modifier === val) ? 0 : val;
+      
+      [2, 4, 6].forEach(v => {
+        const btn = document.getElementById(`mod${v}_${idx}`);
+        if (btn) btn.classList.toggle('selected', calcState[idx].modifier === v);
+      });
+
+      updateCalcScore(idx);
+    }
+
+    function updateCalcScore(idx) {
+      const c = calcState[idx] || { x2: false, flip7: false, modifier: 0 };
+      const rawSum = parseInt(document.getElementById(`calcNum_${idx}`).value) || 0;
+      let total = rawSum;
+      if (c.x2) total *= 2;
+      total += (c.modifier || 0);
+      if (c.flip7) total += 15;
+
+      document.getElementById(`input_${idx}`).value = total;
+      document.getElementById(`bustBtn_${idx}`).classList.remove('active');
+    }
+
+    function submitRound() {
+      state.history.push(JSON.parse(JSON.stringify(state.players)));
+
+      let winner = null;
+
+      state.players.forEach((player, idx) => {
+        const inputVal = document.getElementById(`input_${idx}`).value;
+        const roundScore = parseInt(inputVal) || 0;
+        player.scores.push(roundScore);
+        player.total += roundScore;
+
+        if (player.total >= state.targetScore) {
+          if (!winner || player.total > winner.total) {
+            winner = player;
+          }
+        }
+      });
+
+      state.round++;
+      saveState();
+      renderGame();
+
+      if (winner) {
+        showWinner(winner);
+      }
+    }
+
+    function undoLastRound() {
+      if (state.history.length === 0) return;
+      state.players = state.history.pop();
+      state.round = Math.max(1, state.round - 1);
+      saveState();
+      renderGame();
+    }
+
+    function showWinner(player) {
+      document.getElementById('winnerName').innerText = `${player.name} Wins!`;
+      document.getElementById('winnerScore').innerText = `${player.total} PTS`;
+      document.getElementById('winnerModal').classList.add('open');
+    }
+
+    function closeWinnerModal() {
+      document.getElementById('winnerModal').classList.remove('open');
+    }
+
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('open');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('open');
+    }
+
+    function resetGame() {
+      localStorage.removeItem('flip7_game_state');
+      state = {
+        playerCount: 3,
+        players: [],
+        round: 1,
+        targetScore: 200,
+        history: []
+      };
+      calcState = {};
+      closeResetModal();
+      closeWinnerModal();
+      showScreen('setupScreen');
+      setPlayerCount(3);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
+    }
+  </script>
+</body>
+</html>
